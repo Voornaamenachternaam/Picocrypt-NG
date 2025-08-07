@@ -1910,15 +1910,17 @@ func work() {
 	popupStatus = "Calculating values..."
 	giu.Update()
 
+	// Single HKDF stream: derive header subkey first, then payload subkeys and rekeying
+	var unifiedKDF io.Reader
+
 	// Compute or verify header MAC (HMAC-SHA3-512)
 	{
-		// Derive a subkey for the header MAC
+		// Initialize unified HKDF stream
+		unifiedKDF = hkdf.New(sha3.New512, key, hkdfSalt, nil)
 		subkeyHeader := make([]byte, 64)
-		hk := hkdf.New(sha3.New512, key, hkdfSalt, nil)
-		if n, err := hk.Read(subkeyHeader); err != nil || n != 64 {
+		if _, err := io.ReadFull(unifiedKDF, subkeyHeader); err != nil {
 			panic(errors.New("fatal hkdf.Read error"))
 		}
-
 		macHeader := hmac.New(sha3.New512, subkeyHeader)
 
 		if mode == "encrypt" {
@@ -2028,11 +2030,10 @@ func work() {
 		panic(err)
 	}
 
-	// Use HKDF-SHA3 to generate a subkey for the MAC
+	// Use the single HKDF stream to derive payload MAC subkey and Serpent key
 	var mac hash.Hash
 	subkey := make([]byte, 32)
-	hkdf := hkdf.New(sha3.New256, key, hkdfSalt, nil)
-	if n, err := hkdf.Read(subkey); err != nil || n != 32 {
+	if _, err := io.ReadFull(unifiedKDF, subkey); err != nil {
 		panic(errors.New("fatal hkdf.Read error"))
 	}
 	if paranoid {
@@ -2046,7 +2047,7 @@ func work() {
 
 	// Generate another subkey for use as Serpent's key
 	serpentKey := make([]byte, 32)
-	if n, err := hkdf.Read(serpentKey); err != nil || n != 32 {
+	if _, err := io.ReadFull(unifiedKDF, serpentKey); err != nil {
 		panic(errors.New("fatal hkdf.Read error"))
 	}
 	s, err := serpent.NewCipher(serpentKey)
@@ -2235,7 +2236,7 @@ func work() {
 		if counter >= 60*GiB {
 			// ChaCha20
 			nonce = make([]byte, 24)
-			if n, err := hkdf.Read(nonce); err != nil || n != 24 {
+			if _, err := io.ReadFull(unifiedKDF, nonce); err != nil {
 				panic(errors.New("fatal hkdf.Read error"))
 			}
 			chacha, err = chacha20.NewUnauthenticatedCipher(key, nonce)
@@ -2245,7 +2246,7 @@ func work() {
 
 			// Serpent
 			serpentIV = make([]byte, 16)
-			if n, err := hkdf.Read(serpentIV); err != nil || n != 16 {
+			if _, err := io.ReadFull(unifiedKDF, serpentIV); err != nil {
 				panic(errors.New("fatal hkdf.Read error"))
 			}
 			serpent = cipher.NewCTR(s, serpentIV)
