@@ -1916,7 +1916,7 @@ func work() {
 	// Compute or verify header auth (v2: HMAC over header; v1: SHA3-512(key))
 	if mode == "encrypt" {
 		// v2 format for new volumes
-		unifiedKDF = hkdf.New(sha3.New512, key, hkdfSalt, nil)
+		unifiedKDF = hkdf.New(sha3.New256, key, hkdfSalt, nil)
 		subkeyHeader := make([]byte, 64)
 		if _, err := io.ReadFull(unifiedKDF, subkeyHeader); err != nil {
 			panic(errors.New("fatal hkdf.Read error"))
