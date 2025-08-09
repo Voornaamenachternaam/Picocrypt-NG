@@ -1918,40 +1918,103 @@ func work() {
 	popupStatus = "Calculating values..."
 	giu.Update()
 
-	// Single HKDF stream: derive header subkey first, then payload subkeys and rekeying
+	// Single HKDF stream: derive header subkey first (v2), then payload subkeys and rekeying
 	var unifiedKDF io.Reader
 
-	// Compute or verify header MAC (HMAC-SHA3-512)
-	{
-		// Initialize unified HKDF stream
-		unifiedKDF = hkdf.New(sha3.New512, key, hkdfSalt, nil)
+	// Compute or verify header auth (v2: HMAC over header; v1: SHA3-512(key))
+	if mode == "encrypt" {
+		// v2 format for new volumes
+		unifiedKDF = hkdf.New(sha3.New256, key, hkdfSalt, nil)
 		subkeyHeader := make([]byte, 64)
 		if _, err := io.ReadFull(unifiedKDF, subkeyHeader); err != nil {
 			panic(errors.New("fatal hkdf.Read error"))
 		}
 		macHeader := hmac.New(sha3.New512, subkeyHeader)
 
-		if mode == "encrypt" {
-			// Reconstruct flags
-			flagsHeader := make([]byte, 5)
-			if paranoid { flagsHeader[0] = 1 }
-			if len(keyfiles) > 0 { flagsHeader[1] = 1 }
-			if keyfileOrdered { flagsHeader[2] = 1 }
-			if reedsolo { flagsHeader[3] = 1 }
-			if total%int64(MiB) >= int64(MiB)-128 { flagsHeader[4] = 1 }
+		// Reconstruct flags
+		flagsHeader := make([]byte, 5)
+		if paranoid { flagsHeader[0] = 1 }
+		if len(keyfiles) > 0 { flagsHeader[1] = 1 }
+		if keyfileOrdered { flagsHeader[2] = 1 }
+		if reedsolo { flagsHeader[3] = 1 }
+		if total%int64(MiB) >= int64(MiB)-128 { flagsHeader[4] = 1 }
 
-			macHeader.Write([]byte(version))
-			macHeader.Write([]byte(fmt.Sprintf("%05d", len(comments))))
-			macHeader.Write([]byte(comments))
-			macHeader.Write(flagsHeader)
-			macHeader.Write(salt)
-			macHeader.Write(hkdfSalt)
-			macHeader.Write(serpentIV)
-			macHeader.Write(nonce)
-			macHeader.Write(keyfileHash)
+		macHeader.Write([]byte(version))
+		macHeader.Write([]byte(fmt.Sprintf("%05d", len(comments))))
+		macHeader.Write([]byte(comments))
+		macHeader.Write(flagsHeader)
+		macHeader.Write(salt)
+		macHeader.Write(hkdfSalt)
+		macHeader.Write(serpentIV)
+		macHeader.Write(nonce)
+		macHeader.Write(keyfileHash)
 
-			keyHash = macHeader.Sum(nil)
-		} else { // decrypt
+		keyHash = macHeader.Sum(nil)
+	} else {
+		// Decrypt path: check which version produced the volume
+		legacyV1 := bytes.HasPrefix(headerVersion, []byte("v1."))
+		if legacyV1 {
+			// v1 compatibility: header stores SHA3-512(key)
+			tmp := sha3.New512()
+			if _, err := tmp.Write(key); err != nil {
+				panic(err)
+			}
+			keyHash = tmp.Sum(nil)
+
+			keyCorrect := subtle.ConstantTimeCompare(keyHash, keyHashRef) == 1
+			keyfileCorrect := subtle.ConstantTimeCompare(keyfileHash, keyfileHashRef) == 1
+			incorrect := !keyCorrect
+			if keyfile || len(keyfiles) > 0 {
+				incorrect = !keyCorrect || !keyfileCorrect
+			}
+			if incorrect {
+				if keep {
+					kept = true
+				} else {
+					if !keyCorrect {
+						mainStatus = "The provided password is incorrect"
+					} else {
+						if keyfileOrdered {
+							mainStatus = "Incorrect keyfiles or ordering"
+						} else {
+							mainStatus = "Incorrect keyfiles"
+						}
+						if deniability {
+							fin.Close()
+							os.Remove(inputFile)
+							inputFile = strings.TrimSuffix(inputFile, ".tmp")
+						}
+					}
+					broken(fin, nil, mainStatus, true)
+					if recombine {
+						inputFile = inputFileOld
+					}
+					return
+				}
+			}
+
+			// Initialize legacy HKDF (SHA3-256) and do NOT consume header bytes (maintain v1 ordering)
+			unifiedKDF = hkdf.New(sha3.New256, key, hkdfSalt, nil)
+
+			// Create output file only after validation succeeds
+			fout, err = os.Create(outputFile + ".incomplete")
+			if err != nil {
+				fin.Close()
+				if recombine {
+					os.Remove(inputFile)
+				}
+				accessDenied("Write")
+				return
+			}
+		} else {
+			// v2 validation: HMAC-SHA3-512 over header using first 64 bytes of a single HKDF stream
+			unifiedKDF = hkdf.New(sha3.New512, key, hkdfSalt, nil)
+			subkeyHeader := make([]byte, 64)
+			if _, err := io.ReadFull(unifiedKDF, subkeyHeader); err != nil {
+				panic(errors.New("fatal hkdf.Read error"))
+			}
+			macHeader := hmac.New(sha3.New512, subkeyHeader)
+
 			macHeader.Write(headerVersion)
 			macHeader.Write([]byte(fmt.Sprintf("%05d", headerCommentsLen)))
 			macHeader.Write(headerComments)
@@ -1997,7 +2060,7 @@ func work() {
 				}
 			}
 
-			// Create the output file for decryption (moved here after validation)
+			// Create the output file for decryption (after validation)
 			fout, err = os.Create(outputFile + ".incomplete")
 			if err != nil {
 				fin.Close()
