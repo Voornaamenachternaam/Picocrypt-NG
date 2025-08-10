@@ -3025,7 +3025,7 @@ func main() {
 		panic(errors.New("rs failed to init"))
 	}
 	// Create the main window
-	window = giu.NewMasterWindow("Picocrypt "+version[1:], 318, 507, giu.MasterWindowFlagsNotResizable)
+	window = giu.NewMasterWindow("Picocrypt NG "+version[1:], 318, 507, giu.MasterWindowFlagsNotResizable)
 
 	// Start the dialog module
 	dialog.Init()
