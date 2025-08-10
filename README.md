@@ -1,12 +1,11 @@
-<a href="https://github.com/Picocrypt/Picocrypt/actions/workflows/build-windows.yml"><img src="https://github.com/Picocrypt/Picocrypt/actions/workflows/build-windows.yml/badge.svg"></a>
-<a href="https://github.com/Picocrypt/Picocrypt/actions/workflows/build-macos.yml"><img src="https://github.com/Picocrypt/Picocrypt/actions/workflows/build-macos.yml/badge.svg"></a>
-<a href="https://github.com/Picocrypt/Picocrypt/actions/workflows/build-linux.yml"><img src="https://github.com/Picocrypt/Picocrypt/actions/workflows/build-linux.yml/badge.svg"></a>
-<a href="https://github.com/Picocrypt/Picocrypt/actions/workflows/codeql-analysis.yml"><img src="https://github.com/Picocrypt/Picocrypt/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+<a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-windows.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-windows.yml/badge.svg"></a>
+<a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-macos.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-macos.yml/badge.svg"></a>
+<a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-linux.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-linux.yml/badge.svg"></a>
+<a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/codeql-analysis.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/codeql-analysis.yml/badge.svg"></a>
 
-> ### 🚧update this to Picocrypt NG ---v
-<p align="center"><img align="center" src="/images/logo.svg" width="512" alt="Picocrypt"></p> 
+<p align="center"><img align="center" src="/images/logo.png" width="512" alt="Picocrypt NG"></p> 
 
-Picocrypt NG is a very small (hence <i>Pico</i>), very simple, yet very secure encryption tool that you can use to protect your files. It's designed to be the <i>go-to</i> tool for file encryption, with a focus on security, simplicity, and reliability. Picocrypt NG uses the secure XChaCha20 cipher and the Argon2id key derivation function to provide a high level of security.
+Picocrypt NG (new generation) is a very small (hence <i>Pico</i>), very simple, yet very secure encryption tool that you can use to protect your files. It's designed to be the <i>go-to</i> tool for file encryption, with a focus on security, simplicity, and reliability. Picocrypt NG uses the secure XChaCha20 cipher and the Argon2id key derivation function to provide a high level of security.
 
 <br>
 <p align="center"><img align="center" src="/images/screenshot.png" width="318" alt="Picocrypt NG"></p>
@@ -16,7 +15,7 @@ Picocrypt NG is a very small (hence <i>Pico</i>), very simple, yet very secure e
 
 Picocrypt NG is a community-developed continuation of the archived [Picocrypt](https://github.com/Picocrypt) project.
 
-The original Picocrypt author does not endorse, develop, nor support Picocrypt NG.
+*The original Picocrypt author does not endorse, develop, nor support Picocrypt NG.*
 <!--/ DO NOT REMOVE  -->
 
 # Downloads

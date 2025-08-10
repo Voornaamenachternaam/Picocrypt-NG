@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.picocrypt-ng.Picocrypt-NG</id>
-  <name>Picocrypt-NG</name>
+  <name>Picocrypt NG</name>
   <summary>A very small, very simple, yet very secure encryption tool.</summary>
   <developer id="io.github.picocrypt-ng">
-    <name>Picocrypt NG contributors</name>
+    <name>Picocrypt NG developers</name>
   </developer>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0</project_license>
@@ -26,11 +26,11 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="1.49" date="2025-08-03">
-      <url type="details">https://github.com/Picocrypt/Picocrypt/blob/main/Changelog.md#v149-released-08032025</url>
+    <release version="2.00" date="2025-08-07">
+      <url type="details">https://github.com/Picocrypt-NG/Picocrypt-NG/blob/main/Changelog.md#v200-released-08072025</url>
       <description>
         <ul>
-          <li>Added support for displaying Cyrillic characters in the UI</li>
+          <li>First release in new Picocrypt-NG organization!</li>
         </ul>
       </description>
     </release>

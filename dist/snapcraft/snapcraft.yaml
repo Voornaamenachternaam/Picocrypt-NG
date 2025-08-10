@@ -1,13 +1,13 @@
 name: picocrypt-ng
 summary: A very small, very simple, yet very secure encryption tool.
-description: Picocrypt NG is a very small, very simple, yet very secure encryption tool that you can use to protect your files. It's designed to be the go-to tool for encryption, with a focus on security, simplicity, and reliability. Picocrypt NG uses the secure XChaCha20 cipher and the Argon2id key derivation function to provide a high level of security, even from three-letter agencies like the NSA. Your privacy and security is under attack. Take it back with confidence by protecting your files with Picocrypt NG.
+description: Picocrypt NG is a very small, very simple, yet very secure encryption tool that you can use to protect your files. It's designed to be the go-to tool for encryption, with a focus on security, simplicity, and reliability. Picocrypt NG uses the secure XChaCha20 cipher and the Argon2id key derivation function to provide a high level of security.
 version: "2.00"
 confinement: strict
 base: core22
 grade: stable
 
 apps:
-  picocrypt:
+  picocrypt-ng:
     command: bin/Picocrypt-NG
     environment:
       NO_AT_BRIDGE: 1
@@ -17,7 +17,7 @@ apps:
       - home
 
 parts:
-  picocrypt:
+  picocrypt-ng:
     plugin: go
     source: .
     build-packages:

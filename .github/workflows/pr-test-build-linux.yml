@@ -37,7 +37,7 @@ jobs:
     - name: Build
       run: |
         cd src
-        go build -v -ldflags="-s -w" -o Picocrypt Picocrypt.go
+        go build -v -ldflags="-s -w" -o Picocrypt-NG Picocrypt-NG.go
       env:
         CGO_ENABLED: 1
         GOAMD64: v1
@@ -46,36 +46,36 @@ jobs:
       run: |
         wget -O upx.tar.xz https://github.com/upx/upx/releases/download/v5.0.2/upx-5.0.2-amd64_linux.tar.xz
         tar -xf upx.tar.xz
-        upx-5.0.2-amd64_linux/upx --lzma src/Picocrypt
+        upx-5.0.2-amd64_linux/upx --lzma src/Picocrypt-NG
 
     - name: Package as .deb
       run: |
-        wget https://github.com/user-attachments/files/16136712/Picocrypt.zip
-        python -m zipfile -e Picocrypt.zip Picocrypt
-        cp src/Picocrypt Picocrypt/Picocrypt/usr/bin/picocrypt-gui
+        wget https://github.com/user-attachments/files/21703014/Picocrypt-NG.zip
+        python -m zipfile -e Picocrypt-NG.zip Picocrypt-NG
+        cp src/Picocrypt-NG Picocrypt-NG/Picocrypt-NG/usr/bin/picocrypt-ng-gui
         VERSION=$(cat VERSION)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "Version: $VERSION" >> Picocrypt/Picocrypt/DEBIAN/control
-        echo "Version=$VERSION" >> Picocrypt/Picocrypt/usr/share/applications/picocrypt.desktop
-        cd Picocrypt
-        dpkg-deb -Zxz --build --root-owner-group Picocrypt
+        echo "Version: $VERSION" >> Picocrypt-NG/Picocrypt-NG/DEBIAN/control
+        echo "Version=$VERSION" >> Picocrypt-NG/Picocrypt-NG/usr/share/applications/picocrypt-ng.desktop
+        cd Picocrypt-NG
+        dpkg-deb -Zxz --build --root-owner-group Picocrypt-NG
 
     - name: Prepare to upload artifacts
       run: |
         mkdir out
-        mv src/Picocrypt out
-        mv Picocrypt/Picocrypt.deb out
+        mv src/Picocrypt-NG out
+        mv Picocrypt-NG/Picocrypt-NG.deb out
         rm -rf src
-        rm -rf Picocrypt
-        mv out/Picocrypt .
-        mv out/Picocrypt.deb .
+        rm -rf Picocrypt-NG
+        mv out/Picocrypt-NG .
+        mv out/Picocrypt-NG.deb .
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pr-test-build-linux-ONLY-FOR-TESTING
+        name: build-linux
         path: |
-          Picocrypt
-          Picocrypt.deb
+          Picocrypt-NG
+          Picocrypt-NG.deb
         if-no-files-found: error
         compression-level: 9

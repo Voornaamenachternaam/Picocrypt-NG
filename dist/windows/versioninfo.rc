@@ -9,7 +9,7 @@ BLOCK "StringFileInfo"
 	BLOCK "040904B0"
 	{
 		VALUE "FileVersion", "2.00"
-		VALUE "LegalCopyright", "\xA9 Picocrypt NG contributors, GPLv3"
+		VALUE "LegalCopyright", "\xA9 Picocrypt NG developers, GPLv3"
 		VALUE "ProductName", "Picocrypt NG"
 	}
 }
