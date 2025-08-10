@@ -16,6 +16,8 @@ Picocrypt NG (new generation) is a very small (hence <i>Pico</i>), very simple, 
 Picocrypt NG is a community-developed continuation of the archived [Picocrypt](https://github.com/Picocrypt) project.
 
 *The original Picocrypt author does not endorse, develop, nor support Picocrypt NG.*
+
+When referencing Picocrypt NG, please always include the "NG" suffix to ensure distinction.
 <!--/ DO NOT REMOVE  -->
 
 # Downloads
