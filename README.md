@@ -1,7 +1,6 @@
 <a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-windows.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-windows.yml/badge.svg"></a>
 <a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-macos.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-macos.yml/badge.svg"></a>
 <a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-linux.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/build-linux.yml/badge.svg"></a>
-<a href="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/codeql-analysis.yml"><img src="https://github.com/Picocrypt-NG/Picocrypt-NG/actions/workflows/codeql-analysis.yml/badge.svg"></a>
 
 <p align="center"><img align="center" src="/images/logo.png" width="512" alt="Picocrypt NG"></p> 
 
