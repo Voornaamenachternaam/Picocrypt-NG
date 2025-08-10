@@ -1,3 +1,8 @@
+# v2.00 (Released 08/07/2025)
+<ul>
+	<li>✓ First release in new Picocrypt-NG organization!</li>
+</ul>
+
 # v1.49 (Released 08/03/2025)
 <ul>
 	<li>✓ Update macOS icon to fit better</li>

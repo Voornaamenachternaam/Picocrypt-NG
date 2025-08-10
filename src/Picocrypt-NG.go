@@ -2,7 +2,7 @@ package main
 
 /*
 
-Picocrypt-NG v2.00
+Picocrypt NG v2.00
 Copyright (c) Picocrypt NG developers
 Released under GPL-3.0-only
 https://github.com/Picocrypt-NG/Picocrypt-NG
@@ -3025,7 +3025,7 @@ func main() {
 		panic(errors.New("rs failed to init"))
 	}
 	// Create the main window
-	window = giu.NewMasterWindow("Picocrypt "+version[1:], 318, 507, giu.MasterWindowFlagsNotResizable)
+	window = giu.NewMasterWindow("Picocrypt NG "+version[1:], 318, 507, giu.MasterWindowFlagsNotResizable)
 
 	// Start the dialog module
 	dialog.Init()

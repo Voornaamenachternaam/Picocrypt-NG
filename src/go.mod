@@ -1,4 +1,4 @@
-module Picocrypt
+module Picocrypt-NG
 
 go 1.24.2
 
