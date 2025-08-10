@@ -1202,6 +1202,8 @@ func work() {
 	var tempZipCipherW *chacha20.Cipher
 	var tempZipCipherR *chacha20.Cipher
 	var tempZipInUse bool = false
+	// Whether keyfiles should be applied for this operation (based on header for decrypt)
+	var useKeyfiles bool
 	func() { // enclose to keep out of parent scope
 		key, nonce := make([]byte, 32), make([]byte, 12)
 		if n, err := rand.Read(key); err != nil || n != 32 {
@@ -1734,6 +1736,8 @@ func work() {
 			keyfile = flags[1] == 1
 			keyfileOrdered = flags[2] == 1
 		}
+		// For decryption, only consider keyfiles if header requires them
+		useKeyfiles = len(headerFlags) > 1 && headerFlags[1] == 1
 
 		salt = make([]byte, 48)
 		fin.Read(salt)
@@ -1804,8 +1808,12 @@ func work() {
 		panic(errors.New("fatal crypto/argon2 error"))
 	}
 
-	// If keyfiles are being used
-	if len(keyfiles) > 0 || keyfile {
+	// If keyfiles are being used. Decide whether to use keyfiles during this operation
+	if mode == "encrypt" {
+		useKeyfiles = len(keyfiles) > 0
+	}
+
+	if useKeyfiles {
 		popupStatus = "Reading keyfiles..."
 		giu.Update()
 
@@ -2022,7 +2030,7 @@ func work() {
 			headerValid := subtle.ConstantTimeCompare(keyHash, keyHashRef) == 1
 			keyfileCorrect := subtle.ConstantTimeCompare(keyfileHash, keyfileHashRef) == 1
 			incorrect := !headerValid
-			if keyfile || len(keyfiles) > 0 {
+			if useKeyfiles {
 				incorrect = !headerValid || !keyfileCorrect
 			}
 
@@ -2065,7 +2073,7 @@ func work() {
 		}
 	}
 
-	if len(keyfiles) > 0 || keyfile {
+	if useKeyfiles && len(keyfiles) > 0 {
 		// Prevent an even number of duplicate keyfiles
 		if bytes.Equal(keyfileKey, make([]byte, 32)) {
 			mainStatus = "Duplicate keyfiles detected"
