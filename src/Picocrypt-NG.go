@@ -1920,6 +1920,8 @@ func work() {
 
 	// Single HKDF stream: derive header subkey first (v2), then payload subkeys and rekeying
 	var unifiedKDF io.Reader
+	// Track legacy v1 volumes to delay HKDF init until after keyfile XOR
+	var isLegacyV1 bool
 
 	// Compute or verify header auth (v2: HMAC over header; v1: SHA3-512(key))
 	if mode == "encrypt" {
@@ -1952,8 +1954,8 @@ func work() {
 		keyHash = macHeader.Sum(nil)
 	} else {
 		// Decrypt path: check which version produced the volume
-		legacyV1 := bytes.HasPrefix(headerVersion, []byte("v1."))
-		if legacyV1 {
+		isLegacyV1 = bytes.HasPrefix(headerVersion, []byte("v1."))
+		if isLegacyV1 {
 			// v1 compatibility: header stores SHA3-512(key)
 			tmp := sha3.New512()
 			if _, err := tmp.Write(key); err != nil {
@@ -1964,7 +1966,9 @@ func work() {
 			keyCorrect := subtle.ConstantTimeCompare(keyHash, keyHashRef) == 1
 			keyfileCorrect := subtle.ConstantTimeCompare(keyfileHash, keyfileHashRef) == 1
 			incorrect := !keyCorrect
-			if keyfile || len(keyfiles) > 0 {
+			// For legacy v1 volumes, require keyfiles strictly based on header flag
+			// instead of UI state to avoid stale/mismatched UI variables.
+			if useKeyfiles {
 				incorrect = !keyCorrect || !keyfileCorrect
 			}
 			if incorrect {
@@ -1993,9 +1997,6 @@ func work() {
 				}
 			}
 
-			// Initialize legacy HKDF (SHA3-256) and do NOT consume header bytes (maintain v1 ordering)
-			unifiedKDF = hkdf.New(sha3.New256, key, hkdfSalt, nil)
-
 			// Create output file only after validation succeeds
 			fout, err = os.Create(outputFile + ".incomplete")
 			if err != nil {
@@ -2007,8 +2008,8 @@ func work() {
 				return
 			}
 		} else {
-			// v2 validation: HMAC-SHA3-512 over header using first 64 bytes of a single HKDF stream
-			unifiedKDF = hkdf.New(sha3.New512, key, hkdfSalt, nil)
+			// v2 validation: HMAC-SHA3-256 over header using first 64 bytes of a single HKDF stream
+			unifiedKDF = hkdf.New(sha3.New256, key, hkdfSalt, nil)
 			subkeyHeader := make([]byte, 64)
 			if _, err := io.ReadFull(unifiedKDF, subkeyHeader); err != nil {
 				panic(errors.New("fatal hkdf.Read error"))
@@ -2104,6 +2105,10 @@ func work() {
 	// Use the single HKDF stream to derive payload MAC subkey and Serpent key
 	var mac hash.Hash
 	subkey := make([]byte, 32)
+	// Initialize HKDF for legacy v1 only after keyfiles have been XORed into key
+	if isLegacyV1 && unifiedKDF == nil {
+		unifiedKDF = hkdf.New(sha3.New256, key, hkdfSalt, nil)
+	}
 	if _, err := io.ReadFull(unifiedKDF, subkey); err != nil {
 		panic(errors.New("fatal hkdf.Read error"))
 	}
