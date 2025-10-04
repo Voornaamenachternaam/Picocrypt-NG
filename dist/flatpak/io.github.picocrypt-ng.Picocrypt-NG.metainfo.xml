@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.picocrypt-ng.Picocrypt-NG</id>
+  <id>io.github.voornaamenachternaam.Picocrypt-NG</id>
   <name>Picocrypt NG</name>
   <summary>A very small, very simple, yet very secure encryption tool.</summary>
-  <developer id="io.github.picocrypt-ng">
+  <developer id="io.github.voornaamenachternaam">
     <name>Voornaamenachternaam</name>
   </developer>
   <metadata_license>CC0-1.0</metadata_license>
@@ -18,7 +18,7 @@
     <category>Utility</category>
     <category>Security</category>
   </categories>
-  <launchable type="desktop-id">io.github.picocrypt-ng.Picocrypt-NG.desktop</launchable>
+  <launchable type="desktop-id">io.github.voornaamenachternaam.Picocrypt-NG.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/Voornaamenachternaam/Picocrypt-NG/refs/heads/main/images/screenshot.png</image>
@@ -26,11 +26,11 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="2.01" date="2025-10-06">
-      <url type="details">https://github.com/PVoornaamenachternaam/Picocrypt-NG/blob/main/Changelog.md#v200-released-08072025</url>
+    <release version="2.02" date="2025-10-06">
+      <url type="details">https://github.com/PVoornaamenachternaam/Picocrypt-NG/blob/main/Changelog.md#v200-released-10062025</url>
       <description>
         <ul>
-          <li>First release in new Picocrypt-NG organization!</li>
+          <li>Voornaamachternaam organization</li>
         </ul>
       </description>
     </release>
