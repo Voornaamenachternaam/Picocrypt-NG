@@ -13,14 +13,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
 
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: '>=1.24'
+        go-version: '>=1.25'
         check-latest: true
         cache: false
 
@@ -43,7 +43,7 @@ jobs:
         go build -v -ldflags="-s -w" -o Picocrypt-NG Picocrypt-NG.go
       env:
         CGO_ENABLED: 1
-        GOAMD64: v1
+        GOAMD64: v3
 
     - name: Compress with upx
       run: |
@@ -89,7 +89,7 @@ jobs:
         echo "CHECKSUM_DEB=$(sha256sum Picocrypt-NG.deb | cut -d ' ' -f1)" >> $GITHUB_ENV
 
     - name: Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v2.3.3
       with:
         files: |
           Picocrypt-NG
