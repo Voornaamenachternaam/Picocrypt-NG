@@ -10,14 +10,14 @@ on:
 
 jobs:
   pr-test-build-windows:
-    runs-on: windows-2025
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
 
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: '>=1.24'
+        go-version: '>=1.25'
         check-latest: true
         cache: false
 
@@ -32,7 +32,7 @@ jobs:
         go build -v -ldflags="-s -w -H=windowsgui -extldflags=-static" -o 1.exe Picocrypt-NG.go
       env:
         CGO_ENABLED: 1
-        GOAMD64: v1
+        GOAMD64: v3
 
     - name: Add icon, manifest, and version info
       shell: pwsh
