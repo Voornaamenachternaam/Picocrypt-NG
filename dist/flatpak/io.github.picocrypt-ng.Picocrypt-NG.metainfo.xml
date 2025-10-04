@@ -4,12 +4,12 @@
   <name>Picocrypt NG</name>
   <summary>A very small, very simple, yet very secure encryption tool.</summary>
   <developer id="io.github.picocrypt-ng">
-    <name>Picocrypt NG developers</name>
+    <name>Voornaamenachternaam</name>
   </developer>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0</project_license>
-  <url type="homepage">https://github.com/Picocrypt-NG/Picocrypt-NG</url>
-  <url type="bugtracker">https://github.com/Picocrypt-NG/Picocrypt-NG/issues</url>
+  <url type="homepage">https://github.com/Voornaamenachternaam/Picocrypt-NG</url>
+  <url type="bugtracker">https://github.com/Voornaamenachternaam/Picocrypt-NG/issues</url>
   <content_rating type="oars-1.1"/>
   <description>
     <p>Visit the project's GitHub repository to learn more.</p>
@@ -21,13 +21,13 @@
   <launchable type="desktop-id">io.github.picocrypt-ng.Picocrypt-NG.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/Picocrypt-NG/Picocrypt-NG/refs/heads/main/images/screenshot.png</image>
+      <image>https://raw.githubusercontent.com/Voornaamenachternaam/Picocrypt-NG/refs/heads/main/images/screenshot.png</image>
       <caption>Main window</caption>
     </screenshot>
   </screenshots>
   <releases>
     <release version="2.00" date="2025-08-07">
-      <url type="details">https://github.com/Picocrypt-NG/Picocrypt-NG/blob/main/Changelog.md#v200-released-08072025</url>
+      <url type="details">https://github.com/PVoornaamenachternaam/Picocrypt-NG/blob/main/Changelog.md#v200-released-08072025</url>
       <description>
         <ul>
           <li>First release in new Picocrypt-NG organization!</li>
