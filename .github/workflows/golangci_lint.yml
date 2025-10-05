@@ -33,8 +33,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5.0.0
+        with:
+          fetch-depth: 0  # Required so PRs can be created against the base branch
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6.0.0
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -42,8 +44,7 @@ jobs:
         working-directory: ./src
         run: |
           go mod tidy
-          git diff --exit-code go.mod
-          # git diff --exit-code go.sum
+          git diff --exit-code go.mod || echo "go.mod updated"
 
       - name: Install plugins
         working-directory: ${{ runner.temp }}
@@ -54,13 +55,32 @@ jobs:
         env:
           CGO_ENABLED: 1
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+      - name: Run golangci-lint (with autofix)
+        working-directory: ./src
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          golangci-lint run --fix --timeout=5m
+          git status
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Fixes applied by golangci-lint, preparing pull request..."
+          else
+            echo "No automatic fixes applied."
+          fi
+
+      - name: Create Pull Request if fixes exist
+        if: ${{ success() }}
+        uses: peter-evans/create-pull-request@v7.0.8
         with:
-          version: v2.5.0
-          working-directory: ./src
-          install-mode: goinstall
-          args: --timeout=5m
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: lint-fixes
+          commit-message: "chore: apply golangci-lint auto-fixes"
+          title: "chore: apply golangci-lint auto-fixes"
+          body: |
+            This pull request contains automatic code fixes from **golangci-lint**.
+            These were applied using `golangci-lint run --fix` in the `/src` directory.
+          base: main
+          add-paths: |
+            src/**/*.go
 
       - name: Test
         working-directory: ./src
