@@ -1,4 +1,5 @@
 name: golangci-lint
+
 on:
   push:
     branches:
@@ -10,135 +11,156 @@ permissions:
   pull-requests: write
   checks: write
 
+env:
+  SRC_DIR: src
+  LINT_TIMEOUT: 5m
+  GOFLAGS: "-mod=mod"
+  CGO_ENABLED: 0
+
 jobs:
   linter:
     name: golangci-lint
     runs-on: ubuntu-latest
-    env:
-      CGO_ENABLED: 0
-
     steps:
-      # 1️⃣ Checkout the repository
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: true
 
-      # 2️⃣ Detect Go version from /src/go.mod
+      - name: Locate go.mod
+        id: locate
+        run: |
+          if [ -f "${{ env.SRC_DIR }}/go.mod" ]; then
+            echo "path=${{ env.SRC_DIR }}" >> $GITHUB_OUTPUT
+          elif [ -f "go.mod" ]; then
+            echo "path=." >> $GITHUB_OUTPUT
+          else
+            echo "No go.mod found in repository root or ${SRC_DIR}" >&2
+            exit 1
+          fi
+
       - name: Detect Go version
         id: goversion
         run: |
-          VERSION=$(grep '^go ' src/go.mod | awk '{print $2}')
+          MODPATH="${{ steps.locate.outputs.path }}"
+          VERSION=$(awk '/^go /{print $2; exit}' "$MODPATH/go.mod" || true)
           if [ -z "$VERSION" ]; then
-            echo "Go version not found in src/go.mod" >&2
-            exit 1
+            echo "go-version=stable" >> $GITHUB_OUTPUT
+          else
+            echo "go-version=$VERSION" >> $GITHUB_OUTPUT
           fi
-          echo "Detected Go version: $VERSION"
-          echo "go-version=$VERSION" >> $GITHUB_OUTPUT
 
-      # 3️⃣ Setup Go using the detected version
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.goversion.outputs.go-version }}
 
-      # 4️⃣ Check and get dependencies
-      - name: Check and get dependencies
-        working-directory: ./src
+      - name: Ensure git user for automated commits
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Prune and download modules
+        working-directory: ${{ steps.locate.outputs.path }}
+        run: |
+          set -e
+          go env
           go mod tidy
-          git diff --exit-code go.mod || echo "go.mod updated"
 
-      # 5️⃣ Run golangci-lint with autofix
-      - name: Run golangci-lint (with autofix)
+      - name: Install golangci-lint
+        run: |
+          set -e
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(go env GOPATH 2>/dev/null || echo $HOME/go)/bin" v1.59.0
+          export PATH="$(go env GOPATH 2>/dev/null || echo $HOME/go)/bin:$PATH"
+          which golangci-lint
+          golangci-lint --version
+
+      - name: Run golangci-lint with autofix
         id: lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: latest
-          working-directory: ./src
-          args: --fix --timeout=5m
-        continue-on-error: true
+        working-directory: ${{ steps.locate.outputs.path }}
+        env:
+          PATH: ${{ runner.temp }}/go/bin:${{ env.PATH }}
+        run: |
+          set -o pipefail
+          export PATH="$(go env GOPATH 2>/dev/null || echo $HOME/go)/bin:$PATH"
+          golangci-lint run --fix --timeout=${{ env.LINT_TIMEOUT }} ./... | tee ../golangci-fix.log || true
 
-      # 6️⃣ Generate lint summary report (for PR + logs)
       - name: Generate lint summary
         id: summary
-        working-directory: ./src
+        working-directory: ${{ steps.locate.outputs.path }}
         run: |
-          echo "Generating lint summary..."
           set +e
-          golangci-lint run --out-format=tab --timeout=5m > ../lint-summary.txt 2>&1
-          ISSUES_TOTAL=$(grep -c '^\S' ../lint-summary.txt || true)
-          FIXED=$(git diff --name-only | grep '\.go$' | wc -l | tr -d ' ')
+          export PATH="$(go env GOPATH 2>/dev/null || echo $HOME/go)/bin:$PATH"
+          golangci-lint run --out-format=tab --timeout=${{ env.LINT_TIMEOUT }} ./... > ../lint-summary.txt 2>&1 || true
+          ISSUES_TOTAL=$(awk 'NF{count++} END{print count+0}' ../lint-summary.txt || echo 0)
+          FIXED=$(git --no-pager diff --name-only | grep '\.go$' | wc -l | tr -d ' ' || echo 0)
           echo "issues_total=$ISSUES_TOTAL" >> $GITHUB_OUTPUT
           echo "fixed=$FIXED" >> $GITHUB_OUTPUT
           set -e
 
-      # 7️⃣ Check for autofix changes
-      - name: Check for changes after lint
+      - name: Detect repository changes after autofix
         id: changes
         run: |
-          if [[ -n "$(git status --porcelain src)" ]]; then
+          if [ -n "$(git status --porcelain)" ]; then
             echo "changes=true" >> $GITHUB_OUTPUT
-            echo "Detected code changes from golangci-lint autofix."
           else
             echo "changes=false" >> $GITHUB_OUTPUT
-            echo "No autofix changes detected."
           fi
 
-      # 8️⃣ Create Pull Request if fixes were applied
       - name: Create Pull Request for autofixes
         if: steps.changes.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v7.0.8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: lint-fixes
-          commit-message: "chore: apply golangci-lint autofixes"
+          token: ${{ secrets.GH2_TOKEN }}
           title: "chore: apply golangci-lint autofixes"
+          commit-message: "chore: apply golangci-lint autofixes"
+          branch: lint-fixes/${{ github.sha }}
           body: |
-            This pull request contains automatic code fixes generated by **golangci-lint**.
+            This pull request contains automatic code fixes generated by golangci-lint.
 
-            **Summary**
-            - ✅ Fixes applied: ${{ steps.summary.outputs.fixed }}
-            - ⚠️ Remaining issues: ${{ steps.summary.outputs.issues_total }}
-
-            All lint results are attached as workflow artifacts.
-          base: main
-          add-paths: |
-            src/**/*.go
-
-      # 9️⃣ Post lint summary as a PR comment (for visibility)
-      - name: Post lint summary comment
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v5.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            🧹 **golangci-lint report**
+            Summary
             - Fixes applied: ${{ steps.summary.outputs.fixed }}
             - Remaining issues: ${{ steps.summary.outputs.issues_total }}
-            Full report attached as artifact.
+          base: main
+          add-paths: |
+            ${{ steps.locate.outputs.path }}/**/*.go
+          labels: |
+            automated
+            lint
 
-      # 🔟 Run Go tests (won’t fail workflow)
-      - name: Run Tests
-        working-directory: ./src
+      - name: Comment lint summary on PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          token: ${{ secrets.GH2_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            golangci-lint report
+            - Fixes applied: ${{ steps.summary.outputs.fixed }}
+            - Remaining issues: ${{ steps.summary.outputs.issues_total }}
+            Attached: lint-summary.txt and golangci-fix.log
+
+      - name: Run tests (non-blocking)
+        working-directory: ${{ steps.locate.outputs.path }}
         continue-on-error: true
         run: |
-          go test -v -cover ./... | tee ../test-log.txt || true
+          set -o pipefail
+          go test -v -cover ./... 2>&1 | tee ../test-log.txt || true
 
-      # 11️⃣ Build (won’t fail workflow)
-      - name: Build
-        working-directory: ./src
+      - name: Build (non-blocking)
+        working-directory: ${{ steps.locate.outputs.path }}
         continue-on-error: true
         run: |
-          go build -v -ldflags "-s -w" -trimpath | tee ../build-log.txt || true
+          set -e
+          go build -v -ldflags "-s -w" -trimpath ./... 2>&1 | tee ../build-log.txt || true
 
-      # 12️⃣ Upload all logs as artifacts
-      - name: Upload logs
+      - name: Upload logs and lint report
         uses: actions/upload-artifact@v4.6.2
         with:
           name: golangci-lint-logs
           path: |
             lint-summary.txt
+            golangci-fix.log
             test-log.txt
             build-log.txt
- 
