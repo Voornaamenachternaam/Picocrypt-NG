@@ -89,7 +89,7 @@ jobs:
         echo "CHECKSUM_DEB=$(sha256sum Picocrypt-NG.deb | cut -d ' ' -f1)" >> $GITHUB_ENV
 
     - name: Release
-      uses: softprops/action-gh-release@v2.3.3
+      uses: softprops/action-gh-release@v2.3.4
       with:
         files: |
           Picocrypt-NG
