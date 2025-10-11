@@ -13,4 +13,15 @@ updates:
   - package-ecosystem: "gomod"
     directory: "src/"
     schedule:
-      interval: "daily" 
+      interval: "daily"
+    ignore:
+      - dependency-name: "github.com/Picocrypt/dialog"
+      - dependency-name: "github.com/Picocrypt/giu"
+      - dependency-name: "github.com/Picocrypt/imgui-go"
+      - dependency-name: "github.com/Picocrypt/infectious"
+      - dependency-name: "github.com/Picocrypt/serpent"
+      - dependency-name: "github.com/Picocrypt/zxcvbn-go"
+      - dependency-name: "github.com/Picocrypt/gl"
+      - dependency-name: "github.com/Picocrypt/glfw"
+      - dependency-name: "github.com/Picocrypt/mainthread"
+      - dependency-name: "github.com/Picocrypt/w32"
