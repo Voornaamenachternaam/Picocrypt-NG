@@ -5,9 +5,3 @@ updates:
       - "**/*"
     schedule:
       interval: "daily"
-
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "daily"      
