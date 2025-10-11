@@ -1,7 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
-    directory: "/src"
+    directories:
+      - "**/*"
     schedule:
       interval: "daily"
 
