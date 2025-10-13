@@ -85,7 +85,7 @@ jobs:
         echo "CHECKSUM_PICOCRYPT_NG=$($hash.Hash)" >> $env:GITHUB_ENV
 
     - name: Release
-      uses: softprops/action-gh-release@v2.4.0
+      uses: softprops/action-gh-release@v2.4.1
       with:
         files: |
           src/Picocrypt-NG.exe
