@@ -24,5 +24,5 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AI_PROVIDER: openrouter
-          AI_MODEL: microsoft/mai-ds-r1:free
+          AI_MODEL: tngtech/deepseek-r1t2-chimera:free
           AI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
