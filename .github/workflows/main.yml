@@ -1,37 +1,35 @@
-name: "AI inference"
+name: "AI inference (MCP enabled)"
 on:
   pull_request:
     types: [opened, reopened, synchronize]
 
-# Minimal permissions required by the action + permissions for the AI to act on PRs/issues if you want that.
 permissions:
+  # minimal workflow permissions for calling Models + letting the action use repo read data
   contents: read
-  models: read
   pull-requests: read
-  issues: write
-  checks: write
-  statuses: write
+  models: read
 
 jobs:
   inference:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (optional, safe default)
-        uses: actions/checkout@v5.0.0
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: AI Inference with GitHub Tools
+      - name: AI Inference with GitHub Tools (MCP)
         id: inference
         uses: actions/ai-inference@v2.0.1
         with:
           prompt: "List my open pull requests and create a summary"
-          enable-github-mcp: true
-          # token used for calling the Models endpoint - use the builtin GITHUB_TOKEN
+          # IMPORTANT: token is used for model inference calls (use the built-in token)
           token: ${{ github.token }}
-          # github-mcp-token MUST be a Personal Access Token (PAT) stored in a repository secret.
-          # Create a PAT and save it in Settings → Secrets → Actions as e.g. USER_PAT
+          # github-mcp-token must be a PAT (fine-grained recommended), stored as a repo secret
           github-mcp-token: ${{ secrets.GH2_TOKEN }}
+          enable-github-mcp: true
+          model: openai/gpt-4o
+          max-tokens: 400
 
-      - name: Print output
+      - name: Show model response
         run: |
-          echo "AI response:"
+          echo "=== AI response ==="
           echo "${{ steps.inference.outputs.response }}"
