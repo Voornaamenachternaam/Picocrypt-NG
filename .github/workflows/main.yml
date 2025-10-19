@@ -3,11 +3,11 @@ name: AI Review (OpenRouter - minimal)
 on:
   pull_request:
     branches: [main]          # review PRs into main
-    types: [opened, synchronize]
+    types:    [opened, synchronize]
 
 permissions:
-  contents: read
-  pull-requests: write        # so the bot can add comments
+  contents:       read
+  pull-requests:  write        # so the bot can add comments
 
 jobs:
   review:
@@ -17,7 +17,8 @@ jobs:
 
       - uses: AidentErfurt/bc-ai-reviewer@main
         with:
-          GITHUB_TOKEN: ${{ secrets.GH2_TOKEN }}
-          AI_PROVIDER: openrouter
-          AI_MODEL: microsoft/mai-ds-r1:free
-          AI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+
+          AI_PROVIDER:   openrouter
+          AI_MODEL:      microsoft/mai-ds-r1:free
+          AI_API_KEY:    ${{ secrets.OPENROUTER_API_KEY }}
