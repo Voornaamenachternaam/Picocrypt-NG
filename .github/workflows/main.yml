@@ -1,4 +1,7 @@
-name: Code Review
+name: 'AI inference'
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 permissions:
   actions: write
@@ -14,34 +17,16 @@ permissions:
   repository-projects: write
   security-events: write
   statuses: write
-
-on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-
+  models: read    
+    
 jobs:
-  test:
-    # if: ${{ contains(github.event.*.labels.*.name, 'gpt review') }} # Optional; to run only when a label is attached
+  inference:
     runs-on: ubuntu-latest
     steps:
-      - uses: anc95/ChatGPT-CodeReview@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH }}
-
-          # if use github models https://github.com/marketplace/models
-          USE_GITHUB_MODELS: true
-          MODEL: DeepSeek-V3-0324
-
-          # else if use azure deployment
-          AZURE_API_VERSION: xx
-          AZURE_DEPLOYMENT: xx
-
-          # common
-          LANGUAGE: English
-          PROMPT: Please check if there are any confusions or irregularities in the following code diff
-          top_p: 1 # https://platform.openai.com/docs/api-reference/chat/create#chat/create-top_p
-          temperature: 1 # https://platform.openai.com/docs/api-reference/chat/create#chat/create-temperature
-          max_tokens: 10000
-          MAX_PATCH_LENGTH: 10000 # if the patch/diff length is large than MAX_PATCH_LENGTH, will be ignored and won't review. By default, with no MAX_PATCH_LENGTH set, there is also no limit for the patch/diff length.
-          IGNORE_PATTERNS: /node_modules/**/*,*.md # glob pattern or regex pattern to ignore files, separated by comma
-          INCLUDE_PATTERNS: "**/*.js,**/*.ts"
+    - name: AI Inference with GitHub Tools
+      id: inference
+      uses: actions/ai-inference@v2.0.1
+      with:
+        prompt: 'List my open pull requests and create a summary'
+        enable-github-mcp: true
+        token: ${{ secrets.GH2_TOKEN }}
