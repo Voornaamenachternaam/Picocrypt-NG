@@ -1,5 +1,20 @@
 name: Code Review
 
+permissions:
+  actions: write
+  checks: write
+  contents: write
+  deployments: write
+  id-token: write
+  issues: write
+  discussions: write
+  packages: write
+  pages: write
+  pull-requests: write
+  repository-projects: write
+  security-events: write
+  statuses: write
+
 on:
   pull_request:
     types: [opened, reopened, synchronize]
