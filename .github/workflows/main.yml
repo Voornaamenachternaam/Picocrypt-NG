@@ -1,10 +1,17 @@
-name: "AI inference (MCP enabled)"
+name: "AI inference (run in fork — MCP enabled)"
+
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: 'Repository to summarize PRs for (owner/repo). Defaults to this repo.'
+        required: false
+        default: ''
 
 permissions:
-  # minimal workflow permissions for calling Models + letting the action use repo read data
   contents: read
   pull-requests: read
   models: read
@@ -12,24 +19,30 @@ permissions:
 jobs:
   inference:
     runs-on: ubuntu-latest
+    env:
+      # default TARGET_REPO to this fork repo if not provided in workflow_dispatch
+      TARGET_REPO: ${{ github.event.inputs.target_repo != '' && github.event.inputs.target_repo || github.repository }}
     steps:
-      - name: Checkout
+      - name: Checkout (safe)
         uses: actions/checkout@v5
 
-      - name: AI Inference with GitHub Tools (MCP)
+      - name: Show context (debug)
+        run: |
+          echo "Running in repo: $GITHUB_REPOSITORY"
+          echo "Target repo: $TARGET_REPO"
+          echo "Has GH2_TOKEN? ${{ secrets.GH2_TOKEN != '' }}"
+
+      - name: AI Inference with MCP (uses GH2_TOKEN from this fork)
         id: inference
         uses: actions/ai-inference@v2.0.1
         with:
-          prompt: "List my open pull requests and create a summary"
-          # IMPORTANT: token is used for model inference calls (use the built-in token)
-          token: ${{ github.token }}
-          # github-mcp-token must be a PAT (fine-grained recommended), stored as a repo secret
-          github-mcp-token: ${{ secrets.GH2_TOKEN }}
+          # include the explicit repo in the prompt so the agent doesn't ask "which repo?"
+          prompt: |
+            List open pull requests for the repository: ${{ env.TARGET_REPO }}.
+            For each PR include: number, title, author, labels, one-sentence summary, and a suggested next action.
+            Summarize in plain text.
           enable-github-mcp: true
+          token: ${{ github.token }}
+          github-mcp-token: ${{ secrets.GH2_TOKEN }}
           model: openai/gpt-4o
-          max-tokens: 400
-
-      - name: Show model response
-        run: |
-          echo "=== AI response ==="
-          echo "${{ steps.inference.outputs.response }}"
+          max-tokens: 600
