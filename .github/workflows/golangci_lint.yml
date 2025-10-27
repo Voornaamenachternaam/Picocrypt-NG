@@ -145,7 +145,7 @@ jobs:
           go build -v -ldflags "-s -w" -trimpath ./... 2>&1 | tee ../build-log.txt || true
 
       - name: Upload logs and lint report
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: golangci-lint-logs
           path: |
