@@ -2,14 +2,16 @@ name: Codacy Security Scan
 
 # Give the runner the permissions needed to upload SARIF results
 permissions:
-  contents: read
-  actions: read
+  contents: write
+  actions: write
   security-events: write
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * *'
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: {}
 
 jobs:
   codacy-security-scan:
@@ -19,7 +21,7 @@ jobs:
       sarif_files: ${{ steps.split.outputs.sarif_files }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v5.0.0
 
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@master
@@ -95,4 +97,4 @@ jobs:
         with:
           sarif_file: ${{ matrix.sarif_file }}
           # Optional: explicitly provide a token (use only if GITHUB_TOKEN is insufficient).
-          # token: ${{ secrets.SARIF_UPLOAD_PAT }}
+          # token: ${{ secrets.SARIF_ UPLOAD_PAT }}
