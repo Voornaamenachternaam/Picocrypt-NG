@@ -65,7 +65,7 @@ jobs:
         upx/upx-5.0.2-win64/upx.exe --lzma -o src/Picocrypt-NG.exe src/5.exe
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v5.0.0
       with:
         name: build-windows
         path: src/*.exe
