@@ -1,0 +1,113 @@
+name: Superlint
+
+# Run when a PR is created/updated
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+
+# minimal workflow-level permission; per-job overrides below
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+  security-events: write
+  statuses: write
+  issues: write
+
+jobs:
+  lint:
+    name: Lint (check-only)
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+      pull-requests: write
+      security-events: write
+      statuses: write
+      issues: write
+    steps:
+      - name: Checkout repository (for lint check)
+        continue-on-error: true
+        uses: actions/checkout@v5.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Super-Linter (check-only)
+        continue-on-error: true
+        uses: super-linter/super-linter@v8.2.1
+        # check-only: do NOT enable FIX_* here
+        env:
+          # Use the repo secret you requested (exposed as GITHUB_TOKEN for the container)
+          GITHUB_TOKEN: ${{ secrets.GH2_TOKEN }}
+          # explicitly validate Go so Super-Linter knows to look for Go files
+          VALIDATE_GO: true
+          VALIDATE_GO_MODULES: true
+
+  fix-lint-issues:
+    name: Fix linting issues and push back to PR (Go)
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    # write permission needed to push commits & update statuses
+    permissions:
+      contents: write
+      checks: write
+      pull-requests: write
+      security-events: write
+      statuses: write
+      issues: write
+    # set the GITHUB_TOKEN to your secret so downstream steps/actions use that token
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH2_TOKEN }}
+
+    steps:
+      - name: Checkout PR head branch (full history)
+        continue-on-error: true
+        uses: actions/checkout@v5.0.0
+        with:
+          # make sure we check out the PR head branch (not a detached commit)
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          # use your provided token (GH2_TOKEN). If GH2_TOKEN is a PAT, it will allow pushes to protected files/branches.
+          token: ${{ secrets.GH2_TOKEN }}
+          persist-credentials: false
+
+      - name: Super-Linter (auto-fix for Go)
+        continue-on-error: true
+        uses: super-linter/super-linter@v8.2.1
+        env:
+          # expose the token requested by you as GITHUB_TOKEN inside the container
+          GITHUB_TOKEN: ${{ secrets.GH2_TOKEN }}
+
+          # --- Enable Go fix modes ---
+          # enable validation (required for fix mode)
+          VALIDATE_GO: true
+          VALIDATE_GO_MODULES: true
+          # enable automatic fixes for Go and go modules
+          FIX_GO: true
+          FIX_GO_MODULES: true
+
+          # Optional: tune other fixters only if you want them
+          # e.g. FIX_SHELL_SHFMT: true
+
+          # NOTE: enabling a FIX_* implies the corresponding VALIDATE_* must be true,
+          # otherwise super-linter will fail with a configuration error. See docs.
+          # (We set VALIDATE_GO / VALIDATE_GO_MODULES above accordingly.)
+      - name: Commit and push linting fixes
+        continue-on-error: true
+        # run only for PRs and avoid attempting to push fixes to the default branch
+        if: >
+          github.event_name == 'pull_request' &&
+          github.ref_name != github.event.repository.default_branch
+        uses: stefanzweifel/git-auto-commit-action@v7.0.0
+        with:
+          # push back to the same branch that opened the PR
+          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
+          # include the skip token recommended when using a PAT to avoid workflow loops
+          commit_message: "chore: fix linting issues [skip-checks:true]"
+          commit_user_name: super-linter
+          commit_user_email: super-linter@super-linter.dev
