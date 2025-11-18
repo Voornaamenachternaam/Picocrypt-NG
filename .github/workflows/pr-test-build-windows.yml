@@ -12,7 +12,7 @@ jobs:
   pr-test-build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v5.0.1
 
     - name: Setup Go
       uses: actions/setup-go@v6
