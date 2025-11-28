@@ -36,15 +36,35 @@ jobs:
       - name: Ensure reports dir exists
         run: mkdir -p reports
 
+      - name: Detect Go module root
+        id: find-go-module
+        run: |
+          # Find the closest go.mod (limit depth to avoid long searches).
+          module_file=$(find . -maxdepth 6 -type f -name go.mod -print -quit || true)
+          if [ -z "$module_file" ]; then
+            echo "No go.mod found within depth 6; defaulting to repository root"
+            echo "module-root=." >> $GITHUB_OUTPUT
+          else
+            module_dir=$(dirname "$module_file")
+            # strip leading "./" if present
+            module_dir=${module_dir#./}
+            if [ -z "$module_dir" ]; then
+              module_dir="."
+            fi
+            echo "Found go.mod in: $module_dir"
+            echo "module-root=$module_dir" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run golangci-lint (via reviewdog action)
         uses: reviewdog/action-golangci-lint@v2.8.0
         with:
           golangci_lint_version: v2.6.2
-          # We generate the SARIF here for the artifact upload
           golangci_lint_flags: '--fix --output.sarif.path=reports/golangci.sarif --output.text.path=stdout'
           reporter: github-pr-check
           cache: false
           level: error
+          workdir: ${{ steps.find-go-module.outputs.module-root }}
+
 
       - name: Upload SARIF as GitHub Actions artifact
         if: always()
