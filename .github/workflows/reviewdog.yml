@@ -1,4 +1,4 @@
-name: reviewdog (golangci → SARIF + artifact, reviewdog action)
+name: reviewdog
 
 permissions:
   actions: write
@@ -18,14 +18,14 @@ permissions:
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'  
+    - cron: '0 2 * * *'
   push:
     tags:
       - 'v*'
 
 jobs:
   lint-and-upload:
-    name: golangci-lint (v2.5.0) → SARIF → artifact → reviewdog (action v2.8.0)
+    name: golangci-lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -36,35 +36,15 @@ jobs:
       - name: Ensure reports dir exists
         run: mkdir -p reports
 
-      # Run reviewdog/action-golangci-lint@v2.8.0 which will:
-      #  - install golangci-lint v2.5.0
-      #  - run golangci-lint with the provided flags
-      #  - run reviewdog to post PR annotations
-      # We pass flags so golangci-lint writes SARIF to reports/golangci.sarif
-      - name: Run golangci-lint (via reviewdog action) — generate SARIF & annotate PR
+      - name: Run golangci-lint (via reviewdog action)
         uses: reviewdog/action-golangci-lint@v2.8.0
         with:
-          # pin golangci-lint to v2.5.0 (your requested version)
           golangci_lint_version: v2.6.2
-          # instruct golangci-lint to write SARIF to reports/golangci.sarif
-          # and print text to stdout for reviewdog to parse.
-          # Note: flags follow golangci-lint v2 semantics (output.* flags).
+          # We generate the SARIF here for the artifact upload
           golangci_lint_flags: '--fix --output.sarif.path=reports/golangci.sarif --output.text.path=stdout'
-          # ensure reviewdog posts a PR check (same as before)
           reporter: github-pr-check
-          # do not use reviewdog action cache
           cache: false
-          # set the reviewdog level / behavior if desired
           level: error
-          # default GitHub token is used; explicit passed if you prefer:
-          # github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Show reports directory & SARIF head (debug)
-        run: |
-          echo "PWD: $(pwd)"
-          ls -la reports || true
-          echo "---- head of SARIF ----"
-          head -n 200 reports/golangci.sarif || true
 
       - name: Upload SARIF as GitHub Actions artifact
         if: always()
@@ -80,3 +60,17 @@ jobs:
           sarif_file: reports/golangci.sarif
           wait-for-processing: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove SARIF report before PR creation
+        if: always()
+        run: rm -rf reports
+
+      - name: Create Pull Request with Fixes
+        uses: peter-evans/create-pull-request@v7.0.9
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: auto-fix golangci-lint issues"
+          title: "chore: auto-fix golangci-lint issues"
+          body: "Automated fixes applied by golangci-lint."
+          branch: "fix/golangci-lint-auto-fixes"
+          base: "main"
