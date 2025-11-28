@@ -27,43 +27,82 @@ jobs:
   lint-and-upload:
     name: golangci-lint
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.0
         with:
           fetch-depth: 0
 
-      - name: Detect Go module root
+      - name: Ensure reports dir exists
+        run: mkdir -p reports
+
+      - name: Detect Go module root and target file
         id: find-go-module
         run: |
-          # Find the closest go.mod (search depth limited to 6)
           module_file=$(find . -maxdepth 6 -type f -name go.mod -print -quit || true)
-          if [ -z "$module_file" ]; then
-            echo "No go.mod found within depth 6; defaulting to repository root"
-            echo "module-root=." >> $GITHUB_OUTPUT
-          else
-            module_dir=$(dirname "$module_file")
-            # strip leading "./" if present
-            module_dir=${module_dir#./}
-            if [ -z "$module_dir" ]; then
-              module_dir="."
-            fi
-            echo "Found go.mod in: $module_dir"
-            echo "module-root=$module_dir" >> $GITHUB_OUTPUT
+          target_file=$(find . -type f -path './src/Picocrypt-NG.go' -print -quit || true)
+          if [ -z "$target_file" ]; then
+            target_file=$(find . -type f -name 'Picocrypt-NG.go' -print -quit || true)
           fi
 
-      - name: Run golangci-lint (via reviewdog action) — single file (safe subset)
+          if [ -z "$module_file" ]; then
+            module_dir="."
+          else
+            module_dir=$(dirname "$module_file")
+            module_dir=${module_dir#./}
+            if [ -z "$module_dir" ]; then module_dir="."; fi
+          fi
+
+          if [ -z "$target_file" ]; then
+            target_rel="src/Picocrypt-NG.go"
+          else
+            target_file=${target_file#./}
+            if [ "$module_dir" = "." ]; then
+              target_rel="$target_file"
+            else
+              prefix="${module_dir%/}/"
+              case "$target_file" in
+                "$prefix"*) target_rel="${target_file#$prefix}" ;;
+                *) target_rel="$target_file" ;;
+              esac
+            fi
+          fi
+
+          echo "module-root=$module_dir" >> $GITHUB_OUTPUT
+          echo "target-path=$target_rel" >> $GITHUB_OUTPUT
+
+      - name: Install system packages required by GTK/GLFW
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            build-essential \
+            libgtk-3-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev \
+            libxss-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev
+          pkg-config --modversion gtk+-3.0 || true
+
+      - name: Run golangci-lint (via reviewdog action) for single file
         uses: reviewdog/action-golangci-lint@v2.8.0
         with:
-          golangci_lint_flags: '--no-config --disable-all -E gofmt -E gofumpt -E goimports -E lll -E misspell --fix --output.sarif.path=reports/golangci.sarif --output.text.path=stdout Picocrypt-NG.go'
+          golangci_lint_flags: >-
+            --fix
+            --output.sarif.path=reports/golangci.sarif
+            --output.text.path=stdout
+            ${{ steps.find-go-module.outputs.target-path }}
           reporter: github-pr-check
           cache: false
           level: error
-          # run from the detected module root (typically "src")
           workdir: ${{ steps.find-go-module.outputs.module-root }}
         env:
-          # Keep cgo disabled and clear pkg-config path to avoid cgo/pkg-config triggers.
-          CGO_ENABLED: '0'
+          CGO_ENABLED: '1'
           PKG_CONFIG_PATH: ''
 
       - name: Ensure SARIF exists for Code Scanning upload
@@ -71,7 +110,23 @@ jobs:
         run: |
           mkdir -p reports
           if [ ! -s reports/golangci.sarif ]; then
-            printf '%s\n' '{"version":"2.1.0","runs":[]}' > reports/golangci.sarif
+            cat > reports/golangci.sarif <<'SARIF'
+{
+  "version": "2.1.0",
+  "$schema": "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "golangci-lint",
+          "informationUri": "https://github.com/golangci/golangci-lint"
+        }
+      },
+      "results": []
+    }
+  ]
+}
+SARIF
           fi
 
       - name: Upload SARIF to GitHub Code Scanning
@@ -95,4 +150,3 @@ jobs:
           body: "Automated fixes applied by golangci-lint."
           branch: "fix/golangci-lint-auto-fixes"
           base: "main"
-
