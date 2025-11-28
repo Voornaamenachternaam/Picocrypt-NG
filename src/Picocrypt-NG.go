@@ -338,7 +338,7 @@ func draw() {
 							giu.CloseCurrentPopup()
 							showPassgen = false
 						}),
-						giu.Style().SetDisabled(!(passgenUpper || passgenLower || passgenNums || passgenSymbols)).To(
+						giu.Style().SetDisabled(!passgenUpper && !passgenLower && !passgenNums && !passgenSymbols).To(
 							giu.Button("Generate").Size(100, 0).OnClick(func() {
 								password = genPassword()
 								cpassword = password
@@ -655,7 +655,7 @@ func draw() {
 						giu.Checkbox("Paranoid mode", &paranoid),
 						giu.Tooltip("Provides the highest level of security attainable"),
 						giu.Dummy(-170, 0),
-						giu.Style().SetDisabled(recursively || !(len(allFiles) > 1 || len(onlyFolders) > 0)).To(
+						giu.Style().SetDisabled(recursively || (len(allFiles) <= 1 && len(onlyFolders) <= 0)).To(
 							giu.Checkbox("Compress files", &compress),
 							giu.Tooltip("Compress files with Deflate before encrypting"),
 						),
@@ -673,7 +673,7 @@ func draw() {
 						giu.Checkbox("Deniability", &deniability),
 						giu.Tooltip("Warning: only use this if you know what it does!"),
 						giu.Dummy(-170, 0),
-						giu.Style().SetDisabled(!(len(allFiles) > 1 || len(onlyFolders) > 0)).To(
+						giu.Style().SetDisabled(len(allFiles) <= 1 && len(onlyFolders) <= 0).To(
 							giu.Checkbox("Recursively", &recursively).OnChange(func() {
 								compress = false
 							}),
@@ -1201,7 +1201,7 @@ func work() {
 
 	var tempZipCipherW *chacha20.Cipher
 	var tempZipCipherR *chacha20.Cipher
-	var tempZipInUse bool = false
+	var tempZipInUse = false
 	// Whether keyfiles should be applied for this operation (based on header for decrypt)
 	var useKeyfiles bool
 	func() { // enclose to keep out of parent scope
@@ -1935,14 +1935,24 @@ func work() {
 
 		// Reconstruct flags
 		flagsHeader := make([]byte, 5)
-		if paranoid { flagsHeader[0] = 1 }
-		if len(keyfiles) > 0 { flagsHeader[1] = 1 }
-		if keyfileOrdered { flagsHeader[2] = 1 }
-		if reedsolo { flagsHeader[3] = 1 }
-		if total%int64(MiB) >= int64(MiB)-128 { flagsHeader[4] = 1 }
+		if paranoid {
+			flagsHeader[0] = 1
+		}
+		if len(keyfiles) > 0 {
+			flagsHeader[1] = 1
+		}
+		if keyfileOrdered {
+			flagsHeader[2] = 1
+		}
+		if reedsolo {
+			flagsHeader[3] = 1
+		}
+		if total%int64(MiB) >= int64(MiB)-128 {
+			flagsHeader[4] = 1
+		}
 
 		macHeader.Write([]byte(version))
-		macHeader.Write([]byte(fmt.Sprintf("%05d", len(comments))))
+		fmt.Fprintf(macHeader, "%05d", len(comments))
 		macHeader.Write([]byte(comments))
 		macHeader.Write(flagsHeader)
 		macHeader.Write(salt)
@@ -2017,7 +2027,7 @@ func work() {
 			macHeader := hmac.New(sha3.New512, subkeyHeader)
 
 			macHeader.Write(headerVersion)
-			macHeader.Write([]byte(fmt.Sprintf("%05d", headerCommentsLen)))
+			fmt.Fprintf(macHeader, "%05d", headerCommentsLen)
 			macHeader.Write(headerComments)
 			macHeader.Write(headerFlags)
 			macHeader.Write(salt)
@@ -2509,15 +2519,16 @@ func work() {
 		}
 
 		// Calculate chunk size
-		if splitSelected == 0 {
+		switch splitSelected {
+		case 0:
 			chunkSize *= KiB
-		} else if splitSelected == 1 {
+		case 1:
 			chunkSize *= MiB
-		} else if splitSelected == 2 {
+		case 2:
 			chunkSize *= GiB
-		} else if splitSelected == 3 {
+		case 3:
 			chunkSize *= TiB
-		} else {
+		default:
 			chunkSize = int(math.Ceil(float64(size) / float64(chunkSize)))
 		}
 
