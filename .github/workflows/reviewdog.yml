@@ -92,11 +92,7 @@ jobs:
       - name: Run golangci-lint (via reviewdog action) for single file
         uses: reviewdog/action-golangci-lint@v2.8.0
         with:
-          golangci_lint_flags: >-
-            --fix
-            --output.sarif.path=reports/golangci.sarif
-            --output.text.path=stdout
-            ${{ steps.find-go-module.outputs.target-path }}
+          golangci_lint_flags: '--fix --output.sarif.path=reports/golangci.sarif --output.text.path=stdout ${{ steps.find-go-module.outputs.target-path }}'
           reporter: github-pr-check
           cache: false
           level: error
