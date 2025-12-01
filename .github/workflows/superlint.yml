@@ -46,7 +46,7 @@ jobs:
 
       - name: Super-Linter (check-only)
         continue-on-error: true
-        uses: super-linter/super-linter@v8.2.1
+        uses: super-linter/super-linter@v8.3.0
         # check-only: do NOT enable FIX_* here
         env:
           # Use the repo secret you requested (exposed as GITHUB_TOKEN for the container)
@@ -85,7 +85,7 @@ jobs:
 
       - name: Super-Linter (auto-fix for Go)
         continue-on-error: true
-        uses: super-linter/super-linter@v8.2.1
+        uses: super-linter/super-linter@v8.3.0
         env:
           # expose the token requested by you as GITHUB_TOKEN inside the container
           GITHUB_TOKEN: ${{ secrets.GH2_TOKEN }}
