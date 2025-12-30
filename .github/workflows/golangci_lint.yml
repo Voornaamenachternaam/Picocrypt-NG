@@ -23,11 +23,9 @@ permissions:
 
 env:
   SRC_DIR: src
-  LINT_TIMEOUT: 5m
+  LINT_TIMEOUT: 10m
   GOFLAGS: "-mod=mod"
   CGO_ENABLED: 0
-  GOLANGCI_ACTION_REF: v2.5.0
-  GOLANGCI_LINTER_VERSION: v2.5.0
 
 jobs:
   linter:
